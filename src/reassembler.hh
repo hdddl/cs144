@@ -2,32 +2,22 @@
 
 #include "byte_stream.hh"
 
-#include <queue>
-#include <stack>
+#include <map>
 #include <string>
-#include <unordered_map>
 
 struct Pending_type{
-  uint64_t first_index;
-  std::string data;
-  bool is_last_substring;
+  uint64_t first_index{};
+  std::string data{};
+  bool is_last_substring{};
 };
-
-struct Pending_cmp{
-  bool operator()(const Pending_type& t1, const Pending_type& t2)const{
-    return t1.first_index > t2.first_index;
-  }
-};
-
-
 
 class Reassembler
 {
 private:
   uint64_t next_index_ = 0;
-  std::priority_queue<Pending_type, std::vector<Pending_type>, Pending_cmp>pending_data{};
-  //std::unordered_map<size_t, std::string>data_;                                   // 用于存放未装载的数据
+  std::map<uint64_t, Pending_type>pending_buffer{};                             // 用于存储缓存数据
   uint64_t cnt_pending_ = 0;
+  void merge(Pending_type t);
 public:
   /*
    * Insert a new substring to be reassembled into a ByteStream.
