@@ -2,36 +2,6 @@
 
 using namespace std;
 
-
-void Reassembler::merge( Pending_type t )
-{
-  if(pending_buffer.empty()){     // 如果没有缓存数据可以直接合并
-    pending_buffer[t.first_index] = t;
-    return;
-  }
-  auto t_f = t.first_index;
-  auto t_l = t.first_index + t.data.size();
-
-  auto latter = pending_buffer.lower_bound(t.first_index);
-  // 可以分为三种情况分别进行设计
-  if(latter == pending_buffer.begin()){
-    if(t_l <= latter->first){     // 没有重叠可以直接插入
-      pending_buffer[t.first_index] = t;
-      return;
-    }         // 处理重叠的情况
-    t.data = t.data.substr(0, latter->first - t_f);
-    pending_buffer[t.first_index] = t;
-  }else if(latter == pending_buffer.end()){
-    
-  }else{
-
-  }
-  auto prior = prev(latter);
-
-
-
-}
-
 /*
  * 1. 确定写入条件
  * 2. 确定缓存条件
@@ -51,18 +21,37 @@ void Reassembler::insert( uint64_t first_index, string data, bool is_last_substr
     }
     output.push(data.substr(next_index_ - first_index, sz));
     next_index_ += sz;                                        // 更新 next_index
-    while(!pending_buffer.empty()){
-      const Pending_type i = pending_buffer.begin()->second;
-      if(i.first_index > next_index_ && data.size() < output.available_capacity()){   // 防止无限循环
+    while(!pending_buffer.empty()){                           // 处理缓存空间
+      const uint64_t i = pending_buffer.begin()->first;
+      const bool eof = pending_buffer.begin()->second.second;
+      const char v = pending_buffer.begin()->second.first;
+      if(i > next_index_ || output.available_capacity() == 0){
         break;
       }
-      pending_buffer.erase(i.first_index);
-      cnt_pending_ -= i.data.size();
-      insert(i.first_index, i.data, i.is_last_substring, output);
+      if(i == next_index_){
+        pending_buffer.erase(i);
+        cnt_pending_--;
+        next_index_++;
+        output.push(v);
+        if(eof){
+          is_last_substring = true;
+        }
+      }else if(i < next_index_){        // 重复的直接抹去
+        cnt_pending_--;
+        pending_buffer.erase(i);
+      }
     }
   }else if(first_index > next_index_ && data.size() < output.available_capacity()){                                 // 缓存条件
-      merge(Pending_type{first_index, data, is_last_substring});                // 合并到缓存中
-      cnt_pending_ += data.size();
+    const uint64_t sz = data.size();
+    for(uint64_t i = 0; i < sz; i++){
+      if(!pending_buffer.contains(first_index+i)){
+        pending_buffer[first_index + i] = pair<char, bool>{data[i], false};
+        cnt_pending_++;
+      }
+    }
+    if(is_last_substring){        // 标记为 EOF
+      pending_buffer[first_index + sz - 1].second = true;
+    }
   }
 
   if(is_last_substring && pending_buffer.empty()){         // 当这是最后一个元素，内部缓存空间里面没有元素的时候关闭连接

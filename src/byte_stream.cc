@@ -18,6 +18,13 @@ void Writer::push( string data )
   }
 }
 
+void Writer::push( char data ) {
+ if(buffer_.size() < capacity_){      // 只要还有空间就可以插入
+    cnt_in_++;
+    buffer_.push(data);
+ }
+}
+
 void Writer::close()
 {
   close_status_ = true;

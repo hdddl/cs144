@@ -34,6 +34,7 @@ class Writer : public ByteStream
 {
 public:
   void push( std::string data ); // Push data to stream, but only as much as available capacity allows.
+  void push(char data);
 
   void close();     // Signal that the stream has reached its ending. Nothing more will be written.
   void set_error(); // Signal that the stream suffered an error.

@@ -5,19 +5,14 @@
 #include <map>
 #include <string>
 
-struct Pending_type{
-  uint64_t first_index{};
-  std::string data{};
-  bool is_last_substring{};
-};
 
 class Reassembler
 {
 private:
   uint64_t next_index_ = 0;
-  std::map<uint64_t, Pending_type>pending_buffer{};                             // 用于存储缓存数据
+  std::map<uint64_t, std::pair<char, bool>>pending_buffer{};                             // 用于存储缓存数据
+
   uint64_t cnt_pending_ = 0;
-  void merge(Pending_type t);
 public:
   /*
    * Insert a new substring to be reassembled into a ByteStream.
